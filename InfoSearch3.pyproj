@@ -12,6 +12,10 @@
     <OutputPath>.</OutputPath>
     <Name>InfoSearch3</Name>
     <RootNamespace>InfoSearch3</RootNamespace>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <CommandLineArguments>
+    </CommandLineArguments>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,16 +26,37 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="back.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="index_builder.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="InfoSearch3.py" />
+    <Compile Include="sentence_splitter.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="snippet_builder.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="utils.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="sentences.xml" />
+    <Content Include="abbrevations.txt">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="eng.abbrevations.txt">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="sentences1.xml" />
+    <Content Include="сокр2.txt">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="сокращения.txt">
+      <SubType>Code</SubType>
+    </Content>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

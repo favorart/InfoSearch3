@@ -229,3 +229,13 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+*.pyc
+*.htm
+*.html
+*.xml
+data/out.txt
+data/outs.txt
+data/outs1.txt
+data/sentences1.txt
+data/sentences.xml
+back.py
