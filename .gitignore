@@ -239,3 +239,4 @@ data/outs1.txt
 data/sentences1.txt
 data/sentences.xml
 back.py
+*.pkl

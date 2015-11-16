@@ -1,49 +1,97 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from base64 import b64decode, b64encode
+from zlib import compress, decompress
 import numpy as np
 import codecs
 import sys
 import re
 import os
 
-# from index_builder import StrictIndexDocument, StrictIndex
-# from sentence_splitter import SentenceSplitter
-# from snippet_builder import SnippetBuilder
-# from utils import MyXML
+from index_builder import StrictIndexDocument, StrictIndex
+from snippet_builder import SnippetBuilder
 
 
-URL = u'https\://ru.wikipedia.org/wiki/%D0%9C%D0%B5%D1%82%D0%BE%D0%B4_\
-%D0%BE%D0%B1%D1%80%D0%B0%D1%82%D0%BD%D0%BE%D0%B3%D0%BE_%D1%80%D0%B0%D1\
-%81%D0%BF%D1%80%D0%BE%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B5%D0%BD%D0%B8%\
-D1%8F_%D0%BE%D1%88%D0%B8%D0%B1%D0%BA%D0%B8'
-URL = u'http\://www.povarenok.ru/articles/show/8243/'
-
+URLs = "C:\\Users\\MainUser\\Downloads\\Cloud.mail\\povarenok.ru\\1_1000\\urls.txt"
+DOCs = "C:\\Users\\MainUser\\Downloads\\Cloud.mail\\povarenok.ru\\1_1000\\docs-000.txt"
 
 if __name__ == '__main__':
+    # ------------------------------------------
+    if   sys.argv[1] == '-index':
+        
+        if len(sys.argv) >= 4 and sys.argv[2] == '-urls':
+            URLs = sys.argv[3]
+        else:
+            URLs = "./data/urls.txt"
 
-    with codecs.open(u'data/сокр2.txt', 'r', encoding='utf-8') as f:
-        with codecs.open(u'data/abbr_rus.txt', 'w', encoding='utf-8') as f2:
-            lines = list(set( f.readlines() ))
-            lines.sort()
-            f2.write ( u''.join( lines ) )
+        if len(sys.argv) >= 6 and sys.argv[4] == '-docs':
+            DOCs = sys.argv[5]
+        else:
+            DOCs = "./data/docs-000.txt"
+        # ------------------------------------------
+        n = 20 # -1
 
-#if 1:
-#    myxml = MyXML()
-#    # text, poss = myxml.read_xml(u'data/sentences.xml')
-#    # myxml.text_dump(u'data/sentences.txt', text, poss)
+        urls = []
+        with codecs.open(URLs, 'r', encoding='utf-8') as f_urls:
+            for line in f_urls.readlines()[:n]:
+                if len(line.split()) > 1:
+                    urls.append(line.split()[1])
 
-#    text, poss = myxml.text_read(u'data/sentences.txt')
+        docs = []
+        with codecs.open(DOCs, 'r', encoding='utf-8') as f_docs:
+            for line in f_docs.readlines()[:n]:
+                if len( line.split() ) > 1:
+                    docs.append(decompress( b64decode(line.split()[1]) ))
+                    # print docs[-1][:150].encode('cp866', 'ignore'), '\n\n'
 
-#    # with codecs.open(u'data/outs.txt', 'w',encoding='utf-8') as f_out:
-#    #     for p in poss:
-#    #         print >>f_out, p, text[p]
+        # ------------------------------------------
+        index = StrictIndex(u'StrictIndex.txt')
+        indexed_docs = index.build(urls, docs, extacted_cache=True)
+        index.dump(indexed_docs)
+    # ------------------------------------------
+    elif sys.argv[1] == '-snippet':
 
-#    text1, poss1 = myxml.text_read(u'data/sentences1.txt')
-#    SS = SentenceSplitter(n_chars=5)
-#    SS.fit(text, poss)
-#    sentences, poss2 = SS.predict(text1)#    with codecs.open(u'data/outs.txt', 'w',encoding='utf-8') as f_out:
-#        print >>f_out, u','.join( [ str(p) for p in poss1 ] )
-#        print >>f_out, u','.join( [ str(p) for p in poss2 ] )
-#        for s in sentences:
-#            print >>f_out, s, '\n'#    index = StrictIndex()#    with codecs.open(sys.argv[1], 'r', encoding='utf-8') as f_urls:#        urls = f_urls.readlines()#    docs = index.build(urls)#    index.dump(docs)
+        if len(sys.argv) >= 4 and sys.argv[2] == '-queries':
+            Queries = sys.argv[3]
+
+            queries = []
+            with codecs.open(Queries, 'r', encoding='utf-8') as f_queries:
+                for line in f_queries.readlines():
+                    splt = line.split('\t')
+                    if len(splt) > 1:
+                        queries.append( ( splt[0], int(splt[1]) ) )
+        # ------------------------------------------
+        else: # input from console
+
+            print '\n\tinput=',
+            if sys.platform.startswith('win'):
+                query = unicode(sys.stdin.readline(), 'cp866')
+            else:
+                reload(sys)
+                sys.setdefaultencoding('utf-8')
+                query = unicode( sys.stdin.readline() )
+                sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+
+            queries = []
+            splt = query.split('\t')
+            if splt > 1:
+                queries += [( splt[0], int(splt[1]) )]
+            else:
+                print "Incorrect input!"
+
+        # ------------------------------------------
+        if queries:
+            index = StrictIndex(u'StrictIndex.txt')
+            SB = SnippetBuilder(index)
+
+            for query, doc_id in queries:
+
+                if sys.platform.startswith('win'):
+                    print (u"query= '%s'\n" % query).encode('cp866', 'ignore')
+                    print SB.snippet(query, doc_id=doc_id).encode('cp866', 'ignore'), '\n\n'
+                else:
+                    print (u"query= '%s'\n" % query)
+                    print SB.snippet(query, doc_id=doc_id), '\n\n'
+        # ------------------------------------------
+

@@ -1,0 +1,9 @@
+
+
+	python InfoSearch3.py -index   -urls    <PATH> -docs <PATH>
+	python InfoSearch3.py -snippet -queries <PATH>
+
+or
+
+	python InfoSearch3.py -snippet
+		from keyboard input <QUERY \t DOC_ID>

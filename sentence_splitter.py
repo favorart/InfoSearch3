@@ -4,14 +4,12 @@
 from sklearn.tree import DecisionTreeClassifier
 import numpy as np
 import codecs
+import pickle
 import sys
 import re
 import os
 
-
-def lst_unique(lst):
-    seen = set()
-    return [e for e in lst if e not in seen and not seen.add(e)]
+from utils import MyXML
 
 
 class SentenceSplitter(object):
@@ -21,10 +19,14 @@ class SentenceSplitter(object):
     """
     def __init__(self, separs = u'.?!', n_chars=5, fn_abbrs=[ u'data/abbr_rus.txt', u'data/abbr_eng.txt' ]):
         """ """
+        self.tree = DecisionTreeClassifier()
         self.n_chars = n_chars
         self.separs = separs
-        self.re_sepr = re.compile(ur'(?=(.{0,'+ str(self.n_chars) + u'})([' + separs + u'])(.{0,'+ str(self.n_chars) + u'}))')
         self.sections = []
+
+        n = str(n_chars)
+        self.re_sepr = re.compile(ur'(?=(.{'+ n + u'})?([' + separs + u'])(.{'+ n + u'})?)')
+        # print self.re_sepr.pattern
 
         # self.re_sep1 = re.compile(ur'\.')
         # self.re_sep2 = re.compile(ur'\!')
@@ -38,95 +40,148 @@ class SentenceSplitter(object):
         self.re_brace = re.compile(ur'[()]')
 
         self.re_name = re.compile(ur'[A-ZА-ЯЁ][a-zа-яё]?\.[ ]?([A-ZА-ЯЁ][a-zа-яё]?\.[ ]?)[A-ZА-ЯЁ][a-zа-яё]+')
+        self.re_date = re.compile(ur'\d{2,4}(?:\.|/)\d{2}(?:\.|/)\d{2,4}')
+        self.re_site = re.compile(ur'(?:https?://(?:www\.)?)[a-z0-9-]+\.[a-z0-9-]+/.+')
 
-        # # сокращения
-        # self.re_abbrs = u''
-        # for fn in fn_abbrs:
-        #     with codecs.open(fn, 'r', encoding='utf-8') as f_abbr:
-        #         for line in f_abbr.readlines():
-        #             print u'.*' + line.strip()[-1].encode('cp866', 'ignore')
-        #             self.abbrs.append( re.compile('.*' + line.strip()[-1])  )
+        # сокращения
+        self.re_abbrs = []
+        for fn in fn_abbrs:
+            with codecs.open(fn, 'r', encoding='utf-8') as f_abbr:
+                re_abbrs = u'|'.join([ line.rstrip('\n') for line in f_abbr.readlines() ])
+                # print re_abbrs[:160].encode('cp866', 'ignore'), '\n'
+                self.re_abbrs.append( re.compile(re_abbrs) )
+        return
 
-        self.tree = DecisionTreeClassifier()
-        
-    def make_features(self, vl_sections, separ_chars, vr_sections):
+    def features(self, vl_sections, separ_chars, vr_sections):
         """ """
         n = self.n_chars
         X = []
         # features
         for lf, sep, rt in zip (vl_sections, separ_chars, vr_sections):
-            feature = []
+            if lf or rt:
+                feature = []
             
-            # число слов в контекстах
-            # число букв в последних 2х словах
-            # точка в где-то в контекстах
-            # сокращения
+                # print ("'" + "'  '".join([lf, sep, rt]) + "'").encode('cp866', 'ignore')
 
-            feature.append( len(lf) )
-            for i in xrange(n - len(lf)):
-                feature += [0,0,0,0,0,0]
-            for c in lf:
-                feature.append( 1 if c.isupper() else 0 )
-                feature.append( 1 if c.islower() else 0 )
-                feature.append( 1 if c.isdigit() else 0 )
-                feature.append( 1 if self.re_punkt.match(c) is not None else 0 )
-                feature.append( 1 if self.re_space.match(c) is not None else 0 )
-                feature.append( 1 if self.re_brace.match(c) is not None else 0 )
+                # v  число слов в контекстах
+                # v  число букв в последних 2х словах
+                # v  точка в где-то в контекстах
+                # -----------------------------------------------
+                if lf:
+                    for c in lf:
+                        feature.append( 1 if c.isupper() else 0 )
+                        feature.append( 1 if c.islower() else 0 )
+                        feature.append( 1 if c.isdigit() else 0 )
+                        feature.append( 1 if self.re_punkt.match(c) is not None else 0 )
+                        feature.append( 1 if self.re_space.match(c) is not None else 0 )
+                        feature.append( 1 if self.re_brace.match(c) is not None else 0 )
+                    if len(lf) < n: # ?????
+                        feature += [0,0,0,0,0,0] * (n - len(lf))
+                else:
+                    feature += [0,0,0,0,0,0] * n
+                
+                # -----------------------------------------------
+                if rt:
+                    for c in rt:
+                        feature.append( 1 if c.isupper() else 0 )
+                        feature.append( 1 if c.islower() else 0 )
+                        feature.append( 1 if c.isdigit() else 0 )
+                        feature.append( 1 if self.re_punkt.match(c) is not None else 0 )
+                        feature.append( 1 if self.re_space.match(c) is not None else 0 )
+                        feature.append( 1 if self.re_brace.match(c) is not None else 0 )
+                    if len(rt) < n: # ?????
+                        feature += [0,0,0,0,0,0] * (n - len(rt))
+                else:
+                    feature += [0,0,0,0,0,0] * n
+                                    
+                # -----------------------------------------------
+                for s in self.separs:
+                    feature.append(  1 if sep == s else 0 )
+                feature.append( 1 if sep.isupper() else 0 )
+                feature.append( 1 if sep.islower() else 0 )
+                feature.append( 1 if self.re_punkt.match(sep) is not None else 0 )
 
-            # abbrs = []
-            # for abbr in self.re_abbrs:
-            #     abbrs.append( 1 if abbr.match.match(c) is not None else 0 )
-            # feature.append( 1 if any(abbrs) else 0 )
+                # -----------------------------------------------
+                peace = (lf if lf else u'') + sep + (rt if rt else u'')
 
-            feature.append( len(rt) )
-            for c in rt:
-                feature.append( 1 if c.isupper() else 0 )
-                feature.append( 1 if c.islower() else 0 )
-                feature.append( 1 if c.isdigit() else 0 )
-                feature.append( 1 if self.re_punkt.match(c) is not None else 0 )
-                feature.append( 1 if self.re_space.match(c) is not None else 0 )
-                feature.append( 1 if self.re_brace.match(c) is not None else 0 )
-            for i in xrange(n - len(rt)):
-                feature += [0,0,0,0,0,0]
-              
-            for s in self.separs:
-                feature.append(  1 if sep == s else 0 )
-            feature.append( 1 if sep.isupper() else 0 )
-            feature.append( 1 if sep.islower() else 0 )
-            feature.append( 1 if self.re_punkt.match(sep) is not None else 0 )
+                nm = self.re_name.match(peace) is not None
+                # if nm: print (peace).encode('cp866', 'ignore') # !!!
+                feature.append( 1 if nm else 0 )
 
-            nm = self.re_name.match( lf + sep + rt ) is not None
-            feature.append( 1 if nm else 0 )
+                dt = self.re_date.match(peace) is not None
+                # if dt: print (peace).encode('cp866', 'ignore') # !!!
+                feature.append( 1 if dt else 0 )
 
-            sample = feature
-            X.append(sample)
+                st = self.re_site.match(peace) is not None
+                # if st: print (peace).encode('cp866', 'ignore') # !!!
+                feature.append( 1 if st else 0 )
+                
+                # -----------------------------------------------
+                if sep == '.':
+                    peace = (lf if lf else u'') + sep
+                    abbrs = [ (1 if re.match(peace) else 0) for re in self.re_abbrs ]
+                    feature.append( 1 if any(abbrs) else 0 )
+                else:
+                    feature.append(0)
+
+                # if len(feature) != 70: print len(feature),   # !!!
+                # -----------------------------------------------
+                sample = feature
+                X.append(sample)
 
         X = np.mat(X)
         return X
-        
-    def fit(self, text, poss):
+
+    def fit(self, corpus=None, corpus_pos_s=None, fn_fit_corpus=u'data/sentences.xml'):
         """ """
-        vl_sections = []
-        separ_chars = []
-        vr_sections = []
+        fn = re.split(u'\\/', fn_fit_corpus)[-1]
+        fn = re.split(ur'\.', fn)[-2]
 
-        n = self.n_chars
-        for p in poss:
-            vl_sections.append( text[p-n:p] ) 
-            separ_chars.append( text[p] ) 
-            vr_sections.append( text[p+1:p+n+1] )
+        if not os.path.exists(u'data'):
+            os.makedirs(u'data')
 
-        sl_sects, sr_sects = set(vl_sections), set(vr_sections)
-        matches = self.re_sepr.findall (text)
-        for sl in matches:
-            if( sl[0] not in sl_sects and sl[2] not in sr_sects ):
-                vl_sections.append( sl[0] )
-                separ_chars.append( sl[1] )
-                vr_sections.append( sl[2] )
+        if not os.path.isfile('data/' + fn + '-tree.pkl'):
+            vl_sections = []
+            separ_chars = []
+            vr_sections = []
 
-        y = np.mat( [1] * len(poss) + [0] * (len(separ_chars) - len(poss)) )
-        X = self.make_features(vl_sections, separ_chars, vr_sections)
-        self.tree.fit(X,y.T)
+            if corpus is None or corpus_pos_s is None:
+                myxml = MyXML()
+                if not os.path.exists('data/' + fn + u'-cached.txt'):
+                    corpus, corpus_pos_s = myxml.read_xml(fn_fit_corpus)
+                    myxml.text_dump('data/' + fn + u'-cached.txt', corpus, corpus_pos_s)
+                else:
+                    corpus, corpus_pos_s = myxml.text_read('data/' + fn + u'-cached.txt')
+
+            n = self.n_chars
+            for p in corpus_pos_s:
+                vl_sections.append( corpus[p-n:p] ) 
+                separ_chars.append( corpus[p] ) 
+                vr_sections.append( corpus[p+1:p+n+1] )
+
+            sl_sects, sr_sects = set(vl_sections), set(vr_sections)
+            for m in self.re_sepr.finditer(corpus):
+                if      (m.group(1)  or  m.group(3)) \
+                    and (m.group(1) not in sl_sects) \
+                    and (m.group(3) not in sr_sects):
+
+                    vl_sections.append( m.group(1) )
+                    separ_chars.append( m.group(2) )
+                    vr_sections.append( m.group(3) )
+
+            X = self.features(vl_sections, separ_chars, vr_sections)
+            y = np.mat( [1] * len(corpus_pos_s) + [0] * (X.shape[0] - len(corpus_pos_s)) )
+            self.tree.fit(X,y.T)
+
+            str_tree = pickle.dumps(self.tree)
+            with open('data/' + fn + '-tree.pkl', 'w') as f_tree:
+                f_tree.write(str_tree)
+            # print len(str_tree)
+
+        else:
+            with open('data/' + fn + '-tree.pkl', 'r') as f_tree:
+                str_tree = f_tree.read()
+                self.tree = pickle.loads(str_tree)
         return
 
     def predict(self, text):
@@ -135,35 +190,28 @@ class SentenceSplitter(object):
         separ_chars = []
         vr_sections = []
 
-        # matches = self.re_sepr.findall(text)
-        # for m in p.finditer('a1b2c3d4'):
-        #     print m.start(), m.group()
-
         positions = []
         for m in self.re_sepr.finditer(text):
-            positions.append( m.start() + len(m.group(1)) + len(m.group(2)) )
-            # print (m.group(1)  +  m.group(2) + m.group(3)).encode('cp866', 'ignore')
-            vl_sections.append( m.group(1) )
-            separ_chars.append( m.group(2) )
-            vr_sections.append( m.group(3) )
+            if m.group(1) or m.group(3):
+                positions.append( m.start() \
+                                  + (len(m.group(1)) if m.group(1) else 0) \
+                                  +  len(m.group(2)) )
+                # str1 =  u'' + (m.group(1) if m.group(1) else '') \
+                #             +  m.group(2) \
+                #             + (m.group(3) if m.group(3) else '')
+                # print ( str1 ).encode('cp866', 'ignore')
+                vl_sections.append( m.group(1) if m.group(1) else u'')
+                separ_chars.append( m.group(2) )
+                vr_sections.append( m.group(3) if m.group(3) else u'')
 
-        # sentenses = re.split(ur'[' + self.separs + u']', text)
-        # for i in xrange(len(sentenses)):
-        #     sentenses[i] += separ_chars[i]
-        #     # print sentenses[i][-20:].encode('cp866')
-
-        T  = self.make_features(vl_sections, separ_chars, vr_sections)
+        T  = self.features(vl_sections, separ_chars, vr_sections)
         py = self.tree.predict(T)
-
-        # for i,p in enumerate(py):
-        #     if not p:
-        #         sentenses[i] += sentenses[i+1]
-        #         del sentenses[i+1]
 
         py = np.array(py,dtype=bool)
         positions = np.array(positions)[py]
-        
+
         sentences = []
         for splt in np.split(list(text), list(positions)):
             sentences.append( ''.join(splt) )
         return sentences, positions
+

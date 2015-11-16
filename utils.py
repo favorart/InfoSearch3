@@ -12,7 +12,7 @@ import xml.etree.ElementTree
 
 class MyXML(object):
     """ """
-    def read_xml(self, fn_xml=u'sentences.xml', separs=u'.?!'):
+    def read_xml(self, fn_xml=u'sentences.xml'):
         """ """
         xml_root = xml.etree.ElementTree.parse(fn_xml).getroot()
 
@@ -23,12 +23,9 @@ class MyXML(object):
             for paragraph in txt[1]:
                 for sentence in paragraph:
                     size += 1 + len(sentence[0].text)
-                    text += u' ' +  sentence[0].text
-                    # print text[size - 1]
-                    # if ( text[size - 1] in separs ):
+                    text += sentence[0].text + u' '
                     poss.append( size - 1 )
-                text += u'\n'
-                size += 1
+                text = text[:-1] + u'\n'
             text += u'\n'
             size += 1
 

@@ -13,8 +13,7 @@
     <Name>InfoSearch3</Name>
     <RootNamespace>InfoSearch3</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>
-    </CommandLineArguments>
+    <CommandLineArguments>-index</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -44,17 +43,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="abbrevations.txt">
-      <SubType>Code</SubType>
-    </Content>
-    <Content Include="eng.abbrevations.txt">
-      <SubType>Code</SubType>
-    </Content>
-    <Content Include="sentences1.xml" />
-    <Content Include="сокр2.txt">
-      <SubType>Code</SubType>
-    </Content>
-    <Content Include="сокращения.txt">
+    <Content Include="using.txt">
       <SubType>Code</SubType>
     </Content>
   </ItemGroup>
