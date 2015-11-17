@@ -36,7 +36,7 @@ class StrictIndex(object):
             in   набор документов 
             out  прямой индекс
     """
-    def __init__(self, fn_index, SS=SentenceSplitter()):
+    def __init__(self, fn_index, SS=SentenceSplitter(), fn_fit_corpus=u'data/sentences.xml'):
         """ """
         self.morph = pymorphy2.MorphAnalyzer()
         self.fn_index = fn_index
@@ -47,10 +47,7 @@ class StrictIndex(object):
 
         self.SS = SS
         # ---------------------------------
-        if not os.path.exists(u'data'):
-            os.makedirs(u'data')
-
-        self.SS.fit(fn_fit_corpus)
+        self.SS.fit(fn_fit_corpus=fn_fit_corpus)
         # ---------------------------------
         self.word_min_len = 3
         self.threshold_extractor_fails = 0.1
@@ -86,7 +83,7 @@ class StrictIndex(object):
                 doc_words.append( (norm, word, pos) )
         return doc_words
 
-    def build(self, urls, docs=None, fn_fit_corpus=u'data/sentences.xml', extacted_cache=False):
+    def build(self, urls, docs=None, extacted_cache=False):
         """ """
         indexed_docs = []
         doc_id = 0

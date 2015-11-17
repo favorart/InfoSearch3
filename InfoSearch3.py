@@ -13,9 +13,6 @@ from index_builder import StrictIndexDocument, StrictIndex
 from snippet_builder import SnippetBuilder
 
 
-URLs = "C:\\Users\\MainUser\\Downloads\\Cloud.mail\\povarenok.ru\\1_1000\\urls.txt"
-DOCs = "C:\\Users\\MainUser\\Downloads\\Cloud.mail\\povarenok.ru\\1_1000\\docs-000.txt"
-
 if __name__ == '__main__':
     # ------------------------------------------
     if   sys.argv[1] == '-index':
@@ -30,7 +27,7 @@ if __name__ == '__main__':
         else:
             DOCs = "./data/docs-000.txt"
         # ------------------------------------------
-        n = 20 # -1
+        n = 30 # -1
 
         urls = []
         with codecs.open(URLs, 'r', encoding='utf-8') as f_urls:
@@ -46,7 +43,7 @@ if __name__ == '__main__':
                     # print docs[-1][:150].encode('cp866', 'ignore'), '\n\n'
 
         # ------------------------------------------
-        index = StrictIndex(u'StrictIndex.txt')
+        index = StrictIndex(u'Lenta.ru20-StrictIndex.txt') # u'povarenok.ru30-StrictIndex.txt')
         indexed_docs = index.build(urls, docs, extacted_cache=True)
         index.dump(indexed_docs)
     # ------------------------------------------
@@ -82,7 +79,7 @@ if __name__ == '__main__':
 
         # ------------------------------------------
         if queries:
-            index = StrictIndex(u'StrictIndex.txt')
+            index = StrictIndex(u'Lenta.ru20-StrictIndex.txt') # u'povarenok.ru30-StrictIndex.txt') # 
             SB = SnippetBuilder(index)
 
             for query, doc_id in queries:
@@ -94,4 +91,5 @@ if __name__ == '__main__':
                     print (u"query= '%s'\n" % query)
                     print SB.snippet(query, doc_id=doc_id), '\n\n'
         # ------------------------------------------
+    else: print "Incorrect argument!"
 

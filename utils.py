@@ -23,9 +23,11 @@ class MyXML(object):
             for paragraph in txt[1]:
                 for sentence in paragraph:
                     size += 1 + len(sentence[0].text)
-                    text += sentence[0].text + u' '
+                    text += u' ' +  sentence[0].text
                     poss.append( size - 1 )
-                text = text[:-1] + u'\n'
+                # text = text[:-1] + u'\n'
+                text += u'\n'
+                size += 1
             text += u'\n'
             size += 1
 

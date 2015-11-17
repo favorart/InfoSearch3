@@ -128,17 +128,15 @@ class SentenceSplitter(object):
                 # -----------------------------------------------
                 sample = feature
                 X.append(sample)
-
-        X = np.mat(X)
-        return X
+        return  np.mat(X)
 
     def fit(self, corpus=None, corpus_pos_s=None, fn_fit_corpus=u'data/sentences.xml'):
         """ """
-        fn = re.split(u'\\/', fn_fit_corpus)[-1]
-        fn = re.split(ur'\.', fn)[-2]
+        fn = re.split('\\/', fn_fit_corpus)[-1]
+        fn = re.split(r'\.', fn)[-2]
 
-        if not os.path.exists(u'data'):
-            os.makedirs(u'data')
+        if not os.path.exists('data'):
+            os.makedirs('data')
 
         if not os.path.isfile('data/' + fn + '-tree.pkl'):
             vl_sections = []
@@ -147,11 +145,11 @@ class SentenceSplitter(object):
 
             if corpus is None or corpus_pos_s is None:
                 myxml = MyXML()
-                if not os.path.exists('data/' + fn + u'-cached.txt'):
+                if not os.path.exists('data/' + fn + '-cached.txt'):
                     corpus, corpus_pos_s = myxml.read_xml(fn_fit_corpus)
-                    myxml.text_dump('data/' + fn + u'-cached.txt', corpus, corpus_pos_s)
+                    myxml.text_dump('data/' + fn + '-cached.txt', corpus, corpus_pos_s)
                 else:
-                    corpus, corpus_pos_s = myxml.text_read('data/' + fn + u'-cached.txt')
+                    corpus, corpus_pos_s = myxml.text_read('data/' + fn + '-cached.txt')
 
             n = self.n_chars
             for p in corpus_pos_s:
@@ -171,7 +169,7 @@ class SentenceSplitter(object):
 
             X = self.features(vl_sections, separ_chars, vr_sections)
             y = np.mat( [1] * len(corpus_pos_s) + [0] * (X.shape[0] - len(corpus_pos_s)) )
-            self.tree.fit(X,y.T)
+            self.tree.fit(X, y.T)
 
             str_tree = pickle.dumps(self.tree)
             with open('data/' + fn + '-tree.pkl', 'w') as f_tree:

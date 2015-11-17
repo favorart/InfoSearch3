@@ -176,7 +176,7 @@ class SnippetBuilder(object):
             poss.sort()
 
             rng = (poss[-1] - poss[0])
-            if rng < self.snippet_len:
+            if 1: # rng < self.snippet_len:
 
                 bgn = poss[0] - snippet_sent[0]
                 end = bgn + self.snippet_len
@@ -185,6 +185,8 @@ class SnippetBuilder(object):
                     snippet = u'... ' + snippet_sent[2][bgn : end + m.start()] + u' ...'
                     break
             else: # rng > self.snippet_len
+
+                # !!! TODO !!!
                 pass
 
         # too short
