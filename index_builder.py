@@ -60,6 +60,8 @@ class StrictIndex(object):
         poss = []
         words = self.re_extract_words.sub(u' ', text.lower())
         
+        # Уточнить позиции слов, перед тем,
+        # как откинуть лишние пробелы..
         for i,c in enumerate(words):
             if not word_flag and (c != ' '):
                 poss.append(i)
@@ -68,7 +70,7 @@ class StrictIndex(object):
                 word_flag = False
 
         words = self.re_repeat_spaces.sub(u' ', words)
-        words = re.sub(ur'(?:^[ ]+)|(?:[  ]$)', u'', words)
+        words = re.sub(ur'(?:^[ ]+)|(?:[ ]+$)', u'', words)
         words = re.split(ur'[ ]', words)
 
         # print '\n'.join(words[:10]).encode('cp866', 'ignore')        
